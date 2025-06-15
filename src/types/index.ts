@@ -15,6 +15,8 @@ export interface Booking {
   id: string;
   carId: string;
   carName: string;
+  carType: string;
+  carSeats: number;
   pickupDate: Date;
   dropDate: Date;
   totalDays: number;

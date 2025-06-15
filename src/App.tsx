@@ -5,36 +5,67 @@ import { DatePicker } from './components/DatePicker';
 import { BookingForm } from './components/BookingForm';
 import { Calendar as CalendarView } from './components/Calendar';
 import { BookingList } from './components/BookingList';
+import { LoadingSpinner } from './components/LoadingSpinner';
+import { ErrorMessage } from './components/ErrorMessage';
 import { cars } from './data/cars';
 import { Car, Booking } from './types';
+import { useBookings } from './hooks/useBookings';
 
 function App() {
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
   const [pickupDate, setPickupDate] = useState('');
   const [dropDate, setDropDate] = useState('');
-  const [bookings, setBookings] = useState<Booking[]>([]);
   const [activeTab, setActiveTab] = useState<'book' | 'calendar' | 'bookings'>('book');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [latestBooking, setLatestBooking] = useState<Booking | null>(null);
+  const [bookingLoading, setBookingLoading] = useState(false);
+
+  const { 
+    bookings, 
+    loading, 
+    error, 
+    fetchBookings, 
+    createBooking, 
+    updateBookingStatus, 
+    deleteBooking 
+  } = useBookings();
 
   const handleCarSelect = (car: Car) => {
     setSelectedCar(selectedCar?.id === car.id ? null : car);
   };
 
-  const handleBookingComplete = (booking: Booking) => {
-    setBookings(prev => [booking, ...prev]);
-    setLatestBooking(booking);
-    setShowConfirmation(true);
-    
-    // Reset form
-    setSelectedCar(null);
-    setPickupDate('');
-    setDropDate('');
-    
-    // Hide confirmation after 5 seconds
-    setTimeout(() => {
-      setShowConfirmation(false);
-    }, 5000);
+  const handleBookingComplete = async (booking: Booking) => {
+    try {
+      setBookingLoading(true);
+      
+      // Find the selected car to get its type and seats
+      const car = cars.find(c => c.id === booking.carId);
+      const enhancedBooking = {
+        ...booking,
+        carType: car?.type || 'Unknown',
+        carSeats: car?.seats || 0
+      };
+      
+      // Create booking via API
+      const createdBooking = await createBooking(enhancedBooking);
+      setLatestBooking(createdBooking);
+      setShowConfirmation(true);
+      
+      // Reset form
+      setSelectedCar(null);
+      setPickupDate('');
+      setDropDate('');
+      
+      // Hide confirmation after 5 seconds
+      setTimeout(() => {
+        setShowConfirmation(false);
+      }, 5000);
+    } catch (error) {
+      console.error('Failed to create booking:', error);
+      // You could show an error notification here
+    } finally {
+      setBookingLoading(false);
+    }
   };
 
   return (
@@ -69,6 +100,13 @@ function App() {
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Error Notification */}
+      {error && (
+        <div className="fixed top-4 left-4 right-4 z-50 max-w-md mx-auto">
+          <ErrorMessage message={error} onRetry={fetchBookings} />
         </div>
       )}
 
@@ -145,6 +183,7 @@ function App() {
                 pickupDate={pickupDate}
                 dropDate={dropDate}
                 onBookingComplete={handleBookingComplete}
+                loading={bookingLoading}
               />
             </div>
           </div>
@@ -155,10 +194,16 @@ function App() {
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Booking Calendar</h2>
               <p className="text-lg text-gray-600">
-                View all car bookings in a monthly calendar format
+                View all car bookings in a monthly calendar format with color-coded vehicle types
               </p>
             </div>
-            <CalendarView bookings={bookings} />
+            {loading ? (
+              <div className="bg-white rounded-xl shadow-lg p-8">
+                <LoadingSpinner size="lg" text="Loading calendar..." />
+              </div>
+            ) : (
+              <CalendarView bookings={bookings} />
+            )}
           </div>
         )}
 
@@ -170,7 +215,12 @@ function App() {
                 Manage and view all your car reservations
               </p>
             </div>
-            <BookingList bookings={bookings} />
+            <BookingList 
+              bookings={bookings} 
+              loading={loading}
+              onUpdateStatus={updateBookingStatus}
+              onDelete={deleteBooking}
+            />
           </div>
         )}
       </main>

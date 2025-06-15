@@ -1,12 +1,24 @@
-import React from 'react';
-import { Car, Calendar, User, Phone, Mail, CreditCard } from 'lucide-react';
+import React, { useState } from 'react';
+import { Car, Calendar, User, Phone, Mail, CreditCard, MoreVertical, Trash2, Edit } from 'lucide-react';
 import { Booking } from '../types';
+import { LoadingSpinner } from './LoadingSpinner';
 
 interface BookingListProps {
   bookings: Booking[];
+  loading?: boolean;
+  onUpdateStatus?: (id: string, status: 'confirmed' | 'pending' | 'cancelled') => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
 }
 
-export const BookingList: React.FC<BookingListProps> = ({ bookings }) => {
+export const BookingList: React.FC<BookingListProps> = ({ 
+  bookings, 
+  loading = false,
+  onUpdateStatus,
+  onDelete 
+}) => {
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -27,6 +39,44 @@ export const BookingList: React.FC<BookingListProps> = ({ bookings }) => {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const handleStatusUpdate = async (id: string, status: 'confirmed' | 'pending' | 'cancelled') => {
+    if (!onUpdateStatus) return;
+    
+    try {
+      setActionLoading(id);
+      await onUpdateStatus(id, status);
+      setOpenDropdown(null);
+    } catch (error) {
+      console.error('Failed to update booking status:', error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!onDelete) return;
+    
+    if (window.confirm('Are you sure you want to delete this booking?')) {
+      try {
+        setActionLoading(id);
+        await onDelete(id);
+        setOpenDropdown(null);
+      } catch (error) {
+        console.error('Failed to delete booking:', error);
+      } finally {
+        setActionLoading(null);
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-8">
+        <LoadingSpinner size="lg" text="Loading bookings..." />
+      </div>
+    );
+  }
 
   if (bookings.length === 0) {
     return (
@@ -58,9 +108,68 @@ export const BookingList: React.FC<BookingListProps> = ({ bookings }) => {
                   {formatDate(booking.pickupDate)} - {formatDate(booking.dropDate)}
                 </p>
               </div>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-              </span>
+              <div className="flex items-center space-x-2">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                </span>
+                {(onUpdateStatus || onDelete) && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setOpenDropdown(openDropdown === booking.id ? null : booking.id)}
+                      className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                      disabled={actionLoading === booking.id}
+                    >
+                      {actionLoading === booking.id ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <MoreVertical className="w-4 h-4 text-gray-500" />
+                      )}
+                    </button>
+                    
+                    {openDropdown === booking.id && (
+                      <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                        {onUpdateStatus && (
+                          <>
+                            <button
+                              onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Mark as Confirmed
+                            </button>
+                            <button
+                              onClick={() => handleStatusUpdate(booking.id, 'pending')}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Mark as Pending
+                            </button>
+                            <button
+                              onClick={() => handleStatusUpdate(booking.id, 'cancelled')}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Mark as Cancelled
+                            </button>
+                          </>
+                        )}
+                        {onDelete && (
+                          <>
+                            {onUpdateStatus && <hr className="my-1" />}
+                            <button
+                              onClick={() => handleDelete(booking.id)}
+                              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Booking
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">

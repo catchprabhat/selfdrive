@@ -81,6 +81,48 @@ export const Calendar: React.FC<CalendarProps> = ({ bookings }) => {
     return date.toDateString() === dropDate.toDateString();
   };
 
+  const getBookingColor = (booking: Booking): string => {
+    // Color coding based on vehicle type and seats
+    if (booking.carType === 'Electric') {
+      return 'bg-green-100 text-green-800 border-green-200';
+    } else if (booking.carSeats === 7) {
+      return 'bg-red-100 text-red-800 border-red-200';
+    } else if (booking.carSeats === 5) {
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    } else {
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getPickupDropColor = (booking: Booking, isPickup: boolean, isDrop: boolean): string => {
+    const baseColor = getBookingColor(booking);
+    
+    if (isPickup && isDrop) {
+      // Same day pickup and drop - use purple
+      return 'bg-purple-100 text-purple-800 border-purple-200';
+    } else if (isPickup) {
+      // Pickup day - use darker shade
+      if (booking.carType === 'Electric') {
+        return 'bg-green-200 text-green-900 border-green-300';
+      } else if (booking.carSeats === 7) {
+        return 'bg-red-200 text-red-900 border-red-300';
+      } else if (booking.carSeats === 5) {
+        return 'bg-blue-200 text-blue-900 border-blue-300';
+      }
+    } else if (isDrop) {
+      // Drop day - use lighter shade with different pattern
+      if (booking.carType === 'Electric') {
+        return 'bg-green-50 text-green-700 border-green-300';
+      } else if (booking.carSeats === 7) {
+        return 'bg-red-50 text-red-700 border-red-300';
+      } else if (booking.carSeats === 5) {
+        return 'bg-blue-50 text-blue-700 border-blue-300';
+      }
+    }
+    
+    return baseColor;
+  };
+
   const navigateMonth = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
     if (direction === 'prev') {
@@ -164,20 +206,13 @@ export const Calendar: React.FC<CalendarProps> = ({ bookings }) => {
                 {day.bookings.slice(0, 3).map((booking, bookingIndex) => {
                   const isPickup = isPickupDate(day.date, booking);
                   const isDrop = isDropDate(day.date, booking);
+                  const colorClass = getPickupDropColor(booking, isPickup, isDrop);
                   
                   return (
                     <div
                       key={bookingIndex}
-                      className={`text-xs px-1 py-0.5 rounded flex items-center justify-between ${
-                        isPickup && isDrop
-                          ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                          : isPickup
-                          ? 'bg-green-100 text-green-800 border border-green-200'
-                          : isDrop
-                          ? 'bg-red-100 text-red-800 border border-red-200'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}
-                      title={`${booking.carName} - ${booking.customerName}\nPickup: ${formatDateTime(booking.pickupDate)}\nDrop: ${formatDateTime(booking.dropDate)}`}
+                      className={`text-xs px-1 py-0.5 rounded flex items-center justify-between border ${colorClass}`}
+                      title={`${booking.carName} (${booking.carType}, ${booking.carSeats} seats) - ${booking.customerName}\nPickup: ${formatDateTime(booking.pickupDate)}\nDrop: ${formatDateTime(booking.dropDate)}`}
                     >
                       <div className="flex items-center min-w-0 flex-1">
                         <Car className="w-3 h-3 mr-1 flex-shrink-0" />
@@ -211,19 +246,34 @@ export const Calendar: React.FC<CalendarProps> = ({ bookings }) => {
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
         <div className="flex items-center">
           <div className="w-3 h-3 bg-green-100 border border-green-200 rounded mr-2"></div>
-          <span>Pickup Day (P)</span>
+          <span>Electric Vehicle</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-blue-100 border border-blue-200 rounded mr-2"></div>
+          <span>5-Seater Car</span>
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 bg-red-100 border border-red-200 rounded mr-2"></div>
-          <span>Drop Day (D)</span>
+          <span>7-Seater Car</span>
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 bg-purple-100 border border-purple-200 rounded mr-2"></div>
           <span>Same Day P→D</span>
         </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 text-xs text-gray-500">
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-blue-100 rounded mr-2"></div>
-          <span>Rental Period</span>
+          <span className="font-bold mr-1">P</span>
+          <span>= Pickup Day</span>
+        </div>
+        <div className="flex items-center">
+          <span className="font-bold mr-1">D</span>
+          <span>= Drop Day</span>
+        </div>
+        <div className="flex items-center">
+          <span className="font-bold mr-1">P→D</span>
+          <span>= Same Day Pickup & Drop</span>
         </div>
       </div>
     </div>

@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, CreditCard } from 'lucide-react';
 import { Car, Booking } from '../types';
+import { LoadingSpinner } from './LoadingSpinner';
 
 interface BookingFormProps {
   selectedCar: Car | null;
   pickupDate: string;
   dropDate: string;
   onBookingComplete: (booking: Booking) => void;
+  loading?: boolean;
 }
 
 export const BookingForm: React.FC<BookingFormProps> = ({
   selectedCar,
   pickupDate,
   dropDate,
-  onBookingComplete
+  onBookingComplete,
+  loading = false
 }) => {
   const [customerData, setCustomerData] = useState({
     name: '',
@@ -68,12 +71,14 @@ export const BookingForm: React.FC<BookingFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedCar || !pickupDate || !dropDate) return;
+    if (!selectedCar || !pickupDate || !dropDate || loading) return;
 
     const booking: Booking = {
       id: Date.now().toString(),
       carId: selectedCar.id,
       carName: selectedCar.name,
+      carType: selectedCar.type,
+      carSeats: selectedCar.seats,
       pickupDate: new Date(pickupDate),
       dropDate: new Date(dropDate),
       totalDays: calculateTotalDays(),
@@ -107,6 +112,10 @@ export const BookingForm: React.FC<BookingFormProps> = ({
             <div className="flex justify-between">
               <span>Car:</span>
               <span className="font-medium">{selectedCar.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Type:</span>
+              <span className="font-medium">{selectedCar.type} ({selectedCar.seats} seats)</span>
             </div>
             <div className="flex justify-between">
               <span>Duration:</span>
@@ -161,6 +170,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             placeholder="Enter your full name"
             required
+            disabled={loading}
           />
         </div>
 
@@ -176,6 +186,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             placeholder="Enter your email"
             required
+            disabled={loading}
           />
         </div>
 
@@ -191,20 +202,27 @@ export const BookingForm: React.FC<BookingFormProps> = ({
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             placeholder="Enter your phone number"
             required
+            disabled={loading}
           />
         </div>
 
         <button
           type="submit"
-          disabled={!isFormValid}
+          disabled={!isFormValid || loading}
           className={`w-full py-3 px-6 rounded-lg font-semibold flex items-center justify-center transition-all ${
-            isFormValid
+            isFormValid && !loading
               ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >
-          <CreditCard className="w-5 h-5 mr-2" />
-          Complete Booking
+          {loading ? (
+            <LoadingSpinner size="sm" />
+          ) : (
+            <>
+              <CreditCard className="w-5 h-5 mr-2" />
+              Complete Booking
+            </>
+          )}
         </button>
       </form>
     </div>
