@@ -1,6 +1,7 @@
 // Mock API service - replace with your actual API endpoints
-const API_BASE_URL = 'https://api.example.com'; // Replace with your actual API URL
-
+const NETLIFY_DATABASE_URL='postgresql://neondb_owner:npg_c2IJw9LjlbpE@ep-cold-lab-a56reurn-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require'; 
+import { neon } from '@netlify/neon';
+const sql = neon(NETLIFY_DATABASE_URL); // automatically uses env NETLIFY_DATABASE_URL
 export interface ApiBooking {
   id: string;
   carId: string;
@@ -18,10 +19,33 @@ export interface ApiBooking {
   createdAt: string; // ISO string
 }
 
+export interface ServiceBooking {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  gender : string;
+  phone2: string;
+  address: string;
+  v_no: string;
+  v_brand: string;
+  v_type: string;
+  v_model: string;
+  v_colour: string;
+  b_date: string;
+  b_time: string;
+  s_loc: string;
+  notes: string;
+  is_pvt: boolean; // ISO string
+  m_type : string; //(basic, adv, prem)
+}
+
+
+
 // Mock data for demonstration - remove when connecting to real API
 const mockBookings: ApiBooking[] = [
   {
-    id: 'example-1',
+    id: "car-01",
     carId: '1',
     carName: 'Tesla Model 3',
     carType: 'Electric',
@@ -37,7 +61,7 @@ const mockBookings: ApiBooking[] = [
     createdAt: new Date().toISOString()
   },
   {
-    id: 'example-2',
+    id: "car-02",
     carId: '2',
     carName: 'BMW X5',
     carType: 'SUV',
@@ -53,7 +77,7 @@ const mockBookings: ApiBooking[] = [
     createdAt: new Date().toISOString()
   },
   {
-    id: 'example-3',
+    id: "car-03",
     carId: '3',
     carName: 'Audi A4',
     carType: 'Sedan',
@@ -71,63 +95,65 @@ const mockBookings: ApiBooking[] = [
 ];
 
 // Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const bookingApi = {
-  // Fetch all bookings
-  async getBookings(): Promise<ApiBooking[]> {
-    try {
-      await delay(500); // Simulate network delay
-      
-      // For demo purposes, return mock data
-      // Replace with actual API call:
-      // const response = await fetch(`${API_BASE_URL}/bookings`);
-      // if (!response.ok) throw new Error('Failed to fetch bookings');
-      // return await response.json();
-      
-      return mockBookings;
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-      throw new Error('Failed to fetch bookings');
-    }
-  },
+export const getAllBookings = async () => {
+  try {
+    const bookings = await sql`SELECT * FROM CarBookings`;
+    return bookings;
+  } catch (error) {
+    console.error('Error fetching all bookings:', error);
+    throw new Error('Failed to fetch all bookings');
+  }
+};
 
-  // Create a new booking
-  async createBooking(booking: Omit<ApiBooking, 'id' | 'createdAt'>): Promise<ApiBooking> {
-    try {
-      await delay(800); // Simulate network delay
-      
-      const newBooking: ApiBooking = {
-        ...booking,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString()
-      };
+export const getBookings = async () => {
+  try {
+    const booking = await sql`SELECT * FROM CarBookings`;
+    // const response = await fetch(`${API_BASE_URL}/bookings`);
+    // if (!response.ok) throw new Error('Failed to fetch bookings');
+    // return await response.json();
+    console.log(booking);
+    return booking;
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    throw new Error('Failed to fetch bookings');
+  }
+};
 
-      // For demo purposes, add to mock data
-      // Replace with actual API call:
-      // const response = await fetch(`${API_BASE_URL}/bookings`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(booking),
-      // });
-      // if (!response.ok) throw new Error('Failed to create booking');
-      // return await response.json();
+export const createBooking = async (booking: Omit<ApiBooking, 'id' | 'createdAt'>) => {
+  try {
+    //await delay(800); // Simulate network delay
+    
+    const newBooking: ApiBooking = {
+      ...booking,
+      id: "car-04",
+      createdAt: new Date().toISOString()
+    };
 
-      mockBookings.unshift(newBooking);
-      return newBooking;
-    } catch (error) {
-      console.error('Error creating booking:', error);
-      throw new Error('Failed to create booking');
-    }
-  },
+    // For demo purposes, add to mock data
+    // Replace with actual API call:
+    // const response = await fetch(`${API_BASE_URL}/bookings`, {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify(booking),
+    // });
+    // if (!response.ok) throw new Error('Failed to create booking');
+    // return await response.json();
+
+    mockBookings.unshift(newBooking);
+    return newBooking;
+  } catch (error) {
+    console.error('Error creating booking:', error);
+    throw new Error('Failed to create booking');
+  }
+};
 
   // Update booking status
-  async updateBookingStatus(id: string, status: 'confirmed' | 'pending' | 'cancelled'): Promise<ApiBooking> {
+  export const updateBookingStatus = async (id: string, status: 'confirmed' | 'pending' | 'cancelled') => {
     try {
-      await delay(300);
-      
+     // 
       // For demo purposes, update mock data
       // Replace with actual API call:
       // const response = await fetch(`${API_BASE_URL}/bookings/${id}`, {
@@ -149,12 +175,12 @@ export const bookingApi = {
       console.error('Error updating booking:', error);
       throw new Error('Failed to update booking');
     }
-  },
+  };
 
   // Delete a booking
-  async deleteBooking(id: string): Promise<void> {
+  export const deleteBooking = async(id: string) => {
     try {
-      await delay(300);
+     // await delay(300);
       
       // For demo purposes, remove from mock data
       // Replace with actual API call:
@@ -171,5 +197,4 @@ export const bookingApi = {
       console.error('Error deleting booking:', error);
       throw new Error('Failed to delete booking');
     }
-  }
-};
+  };

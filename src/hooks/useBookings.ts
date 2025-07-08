@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Booking } from '../types';
-import { bookingApi, ApiBooking } from '../services/api';
+import { getAllBookings , getBookings,createBooking,updateBookingStatus,deleteBooking} from '../services/api';
 
 // Convert API booking to internal booking format
-const convertApiBooking = (apiBooking: ApiBooking): Booking => ({
+const convertApiBooking = (apiBooking: Booking): Booking => ({
   ...apiBooking,
   pickupDate: new Date(apiBooking.pickupDate),
   dropDate: new Date(apiBooking.dropDate),
@@ -11,7 +11,7 @@ const convertApiBooking = (apiBooking: ApiBooking): Booking => ({
 });
 
 // Convert internal booking to API format
-const convertToApiBooking = (booking: Booking): Omit<ApiBooking, 'id' | 'createdAt'> => ({
+const convertToApiBooking = (booking: Booking): Omit<Booking, 'id' | 'createdAt'> => ({
   carId: booking.carId,
   carName: booking.carName,
   carType: booking.carType,
@@ -36,7 +36,7 @@ export const useBookings = () => {
     try {
       setLoading(true);
       setError(null);
-      const apiBookings = await bookingApi.getBookings();
+      const apiBookings = await getBookings();
       const convertedBookings = apiBookings.map(convertApiBooking);
       setBookings(convertedBookings);
     } catch (err) {
@@ -51,8 +51,8 @@ export const useBookings = () => {
     try {
       setError(null);
       const apiBookingData = convertToApiBooking(booking);
-      const createdApiBooking = await bookingApi.createBooking(apiBookingData);
-      const createdBooking = convertApiBooking(createdApiBooking);
+      const createdApiBooking = await createBooking(booking);
+      const createdBooking = convertApiBooking(apiBookingData);
       
       setBookings(prev => [createdBooking, ...prev]);
       return createdBooking;
@@ -67,7 +67,7 @@ export const useBookings = () => {
   const updateBookingStatus = async (id: string, status: 'confirmed' | 'pending' | 'cancelled') => {
     try {
       setError(null);
-      const updatedApiBooking = await bookingApi.updateBookingStatus(id, status);
+      const updatedApiBooking = await updateBookingStatus(id, status);
       const updatedBooking = convertApiBooking(updatedApiBooking);
       
       setBookings(prev => prev.map(booking => 
@@ -85,7 +85,7 @@ export const useBookings = () => {
   const deleteBooking = async (id: string) => {
     try {
       setError(null);
-      await bookingApi.deleteBooking(id);
+      await deleteBooking(id);
       setBookings(prev => prev.filter(booking => booking.id !== id));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete booking';
