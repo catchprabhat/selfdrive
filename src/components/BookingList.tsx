@@ -24,7 +24,7 @@ export const BookingList: React.FC<BookingListProps> = ({
 
   useEffect(() => {
     const filtered = bookings.filter(booking => 
-      booking.customerPhone.includes(phoneFilter)
+      (booking.customerPhone || '').includes(phoneFilter)
     );
     setFilteredBookings(filtered);
   }, [phoneFilter, bookings]);
