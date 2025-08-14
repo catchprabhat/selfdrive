@@ -5,6 +5,7 @@ import { DatePicker } from './components/DatePicker';
 import { BookingForm } from './components/BookingForm';
 import { Calendar as CalendarView } from './components/Calendar';
 import { BookingList } from './components/BookingList';
+import { ContactUs } from './components/ContactUs';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
 import { cars } from './data/cars';
@@ -15,7 +16,7 @@ function App() {
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
   const [pickupDate, setPickupDate] = useState('');
   const [dropDate, setDropDate] = useState('');
-  const [activeTab, setActiveTab] = useState<'book' | 'calendar' | 'bookings'>('book');
+  const [activeTab, setActiveTab] = useState<'book' | 'calendar' | 'bookings' | 'contact'>('book');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [latestBooking, setLatestBooking] = useState<Booking | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -117,7 +118,8 @@ function App() {
             {[
               { key: 'book', label: 'Book a Car', icon: CarIcon },
               { key: 'calendar', label: 'Calendar View', icon: Calendar },
-              { key: 'bookings', label: 'My Bookings', icon: Calendar }
+              { key: 'bookings', label: 'My Bookings', icon: Calendar },
+              { key: 'contact', label: 'Contact Us', icon: MapPin }
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -222,6 +224,10 @@ function App() {
               onDelete={deleteBooking}
             />
           </div>
+        )}
+
+        {activeTab === 'contact' && (
+          <ContactUs />
         )}
       </main>
 
